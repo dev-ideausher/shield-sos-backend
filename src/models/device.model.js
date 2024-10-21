@@ -12,6 +12,10 @@ const deviceSchema = new mongoose.Schema(
             trim: true,
             required: true,
         },
+        deviceId: {
+            type: String,
+            required: true,
+        },
         macAddress: {
             type: String,
             required: true
