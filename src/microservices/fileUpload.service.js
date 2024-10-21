@@ -1,16 +1,18 @@
-const uuid = require("uuid").v4;
-const multer = require("multer");
+const uuid = require('uuid').v4;
+const multer = require('multer');
 const storage = multer.memoryStorage();
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
-} = require("@aws-sdk/client-s3");
+} = require('@aws-sdk/client-s3');
 
-const config = require("../config/config");
-const { incidentUpdateFileTypes } = require("../constants");
+const config = require('../config/config');
+const { fileTypes } = require('../constants');
+const ApiError = require('../utils/ApiError');
+const httpStatus = require('http-status');
 const { accessKeyId, region, secretAccessKey, name } = config.aws;
 
 const s3client = new S3Client({
@@ -19,53 +21,66 @@ const s3client = new S3Client({
 });
 
 async function fileFilter(req, file, cb) {
-  if (incidentUpdateFileTypes.includes(file.mimetype)) {
+  if (fileTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
     console.log(file);
-    cb(
-      new Error("Invalid file or data, only JPEG ,PNG,MP4,WEBP,MP3,WAVE,GIF,SVG and pdf is allowed!"),
-      false
-    );
+    cb(new ApiError(httpStatus.BAD_REQUEST, 'Invalid file or data'), false);
   }
 }
 
 const multerUpload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 100000000, files: 5 },
+  // limits: { fileSize: 10000000, files: 10 },
 });
 
-async function getObjectURL(Key, signedUrl = false) {
-  const command = new GetObjectCommand({ Key, Bucket: name });
-  const url = await getSignedUrl(s3client, command);
+/**
+ * Generates a URL for accessing an S3 object.
+ * @param {string} Key - The key (or path) of the S3 object.
+ * @param {boolean} [signedUrl=false] - Indicates whether to return a signed URL.
+ * @param {number} [expiresIn] - The duration (in seconds) for which the signed URL remains valid.
+ * @returns {Promise<{ key: string, url: string }>} An object containing the S3 object key and URL.
+ */
+
+async function getObjectURL(Key, signedUrl = false, expiresIn = 3600) {
+  const command = new GetObjectCommand({
+    Key,
+    Bucket: name,
+  });
+  const url = await getSignedUrl(s3client, command, { expiresIn });
   return {
     key: Key,
-    url: signedUrl ? url : url.split("?")[0],
+    url: signedUrl ? url : url.split('?')[0],
   };
 }
 
 async function s3Delete(Key) {
   const command = new DeleteObjectCommand({ Key, Bucket: name });
-  return await s3client.send(command);
+  return s3client.send(command);
 }
 
-async function s3Upload(files, folder = "uploads") {
-  const params = files.map((file) => {
+async function s3Upload(files, folder = 'uploads', private = false, expiresIn = 3600) {
+  const params = files.map(file => {
+    console.log(file)
     return {
       Bucket: name,
-      Key: `${folder}/${uuid()}-${file.originalname}`,
+      Key: `${private ? 'private' : 'public'}/${folder}/${uuid()}-${file.originalname}`,
       Body: file.buffer,
+      ContentType: file.mimetype,
       ACL: 'public-read'
     };
   });
 
-  return await Promise.all(
-    params.map((param) =>
+  return Promise.all(
+    params.map(async param =>
       s3client
         .send(new PutObjectCommand(param))
-        .then(async () => await getObjectURL(param.Key))
-        .catch(() => null)
+        .then(async () => getObjectURL(param.Key, private, expiresIn))
+        .catch(err => {
+          console.log(err);
+          throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to upload the media');
+        })
     )
   );
 }

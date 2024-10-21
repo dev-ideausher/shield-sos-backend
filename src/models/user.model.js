@@ -8,11 +8,6 @@ const userSchema = new mongoose.Schema({
         default: "",
         trim: true,
     },
-    username: {
-        type: String,
-        required: true,
-        unique: true
-    },
     phone: {
         type: String,
         default: "",
@@ -24,53 +19,44 @@ const userSchema = new mongoose.Schema({
         trim: true,
     },
     profilePic: {
-        type: String,
-        default: ""
+        type: {
+            key: String,
+            url: String,
+        },
+        default: null,
     },
     role: {
         type: String,
         enum: userRoles,
-        default: "retailer"
+        default: "user"
     },
-    password: {
+    firebaseUid: {
         type: String,
-        minlength: 6,
+        required: true
+    },
+    firebaseSignInProvider: {
+        type: String,
         required: true
     },
     dob: {
         type: String,
         default: ""
     },
-    isProfileVerified: {
-        type: Boolean,
-        default: false
-    },
-    admin: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        default: null
-    },
-    superDistributor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        default: null
-    },
-    distributor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        default: null
-    },
-    ip: {
+    address: {
         type: String,
         default: ""
     },
-    pin: {
+    isDeleted: {
+        type: Boolean,
+        default: false
+    },
+    deleteReason: {
         type: String,
         default: ""
     },
     active: {
         type: Boolean,
-        default: false
+        default: true
     }
 },
     { timestamps: true }

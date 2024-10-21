@@ -8,27 +8,13 @@ const userValidation = require("../../validations/user.validation");
 const { userController } = require("../../controllers");
 const { fileUploadService } = require("../../microservices");
 
-// Multer middleware for file uploads
-const upload = fileUploadService.multerUpload.fields([
-    { name: 'kycCardFile', maxCount: 1 },
-    { name: 'cancelledChequeFile', maxCount: 1 },
-    { name: "passportSizeImageFile", maxCount: 1 },
-    { name: "profilePic", maxCount: 1 },
-]);
 
 // for updating userDetails
-router.patch("/updateDetails",
-    validate(userValidation.updateUser),
+router.patch("/update-me",
     firebaseAuth(),
+    fileUploadService.multerUpload.single('profilePic'),
     userController.updateUser
 );
-
-// for updating specific user preferences
-router.patch("/updatePreferences",
-    validate(userValidation.updateUserPreferences),
-    firebaseAuth(),
-    userController.updateUserPreferences
-)
 
 // for deleting a user
 router.delete("/:userId",
@@ -39,8 +25,9 @@ router.delete("/:userId",
 
 router.patch("/:userId/update",
     firebaseAuth(),
-    upload,
-    userController.updateUserById
+    restrictTo('Admin'),
+    fileUploadService.multerUpload.single('profilePic'),
+    userController.updateUserByAdmin
 );
 
 router.get("/:id/get",
@@ -58,17 +45,6 @@ router.get("/all",
     firebaseAuth(),
     restrictTo('superadmin', 'admin', 'super_distributor', 'distributor'),
     userController.getAllUsers
-);
-
-router.post("/change-password",
-    firebaseAuth(),
-    userController.changePassword
-);
-
-router.post("/:userId/reset-password",
-    firebaseAuth(),
-    restrictTo('superadmin', 'admin', 'super_distributor'),
-    userController.resetPassword
 );
 
 module.exports = router;

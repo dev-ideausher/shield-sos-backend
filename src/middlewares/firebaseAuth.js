@@ -1,111 +1,49 @@
+const admin = require("firebase-admin");
 const httpStatus = require("http-status");
 const ApiError = require("../utils/ApiError");
-const config = require('../config/config');
-const jwt = require('jsonwebtoken');
+const config = require("../config/config");
+const { getAuth, signInWithCustomToken } = require("firebase/auth");
+// require("../../firebase-web");
 
-const { authService, accountService, deviceSessionService } = require("../services");
+// const serviceAccount = require("../../firebase-service-secret.json");
+const { userService, authService } = require("../services");
+
+admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(config.firebase_secret))
+})
+
 
 const firebaseAuth = () => async (req, res, next) => {
     return new Promise(async (resolve, reject) => {
-        let token = req.headers.authorization;
-        if (!token) {
-            return res.status(401).json({
-                status: false,
-                message: "You are unauthorized"
-            })
+
+        let token;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            token = req.headers.authorization.split(' ')[1];
         }
-        token = req.headers.authorization.split(" ")[1]
+        // const token = req.headers.token;
         // token not found
         if (!token) { reject(new ApiError(httpStatus.BAD_REQUEST, "Please Authenticate!")); }
         try {
-            const payload = jwt.verify(token, config.jwtSecret);
-            const user = await authService.getUserByEmail(payload.email);
+            const payload = await admin.auth().verifyIdToken(token, true);
+            const user = await authService.getUserByFirebaseUId(payload.uid);
             if (!user) {
                 if (req.path === "/register") {
                     req.newUser = payload;
                 } else reject(new ApiError(httpStatus.NOT_FOUND, "User doesn't exist. Please create account"));
             } else {
-                if (user.isBlocked) { throw new ApiError(httpStatus.FORBIDDEN, "User is blocked"); }
+                if (!user.active) { throw new ApiError(httpStatus.FORBIDDEN, "User is blocked"); }
+                if (user.isDeleted) { throw new ApiError(httpStatus.FORBIDDEN, "User is deleted"); }
+
                 req.user = user;
-            }
-
-            resolve();
-        } catch (err) {
-            console.log("FirebaseAuthError:", err.message);
-            if (err?.name === "TokenExpiredError") {
-                const decoded = jwt.decode(token);
-                if (decoded.role === "user") {
-                    let account = await accountService.getAccountByUserId(decoded.id);
-                    const deviceId = req.headers['deviceid'];
-                    let deviceSession = await deviceSessionService.getDeviceByUserId(decoded.id);
-                    if (deviceSession && deviceSession.deviceId === deviceId) {
-                        account.isLoggedOut = true;
-                        await account.save()
-                    }
-                }
-
-            }
-            reject(new ApiError(httpStatus.UNAUTHORIZED, "Failed to authenticate"))
-        }
-    }).then(() => next()).catch((err) => next(err));
-}
-
-const generateCustomToken = () => async (req, res, next) => {
-    return new Promise(async (resolve, reject) => {
-        let token = req.headers.authorization;
-        if (!token) {
-            return res.status(401).json({
-                status: false,
-                message: "You are unauthorized"
-            });
-        }
-        token = req.headers.authorization.split(" ")[1];
-        if (!token) {
-            reject(new ApiError(httpStatus.BAD_REQUEST, "Please Authenticate!"));
-        }
-        try {
-            const payload = jwt.verify(token, jwtSecret);
-            const user = await authService.getUserByEmail(payload.email);
-            if (!user) {
-                if (req.path === "/register") {
-                    req.newUser = payload;
-                } else {
-                    reject(new ApiError(httpStatus.NOT_FOUND, "User doesn't exist. Please create account"));
-                }
-            } else {
-                if (user.isBlocked) {
-                    throw new ApiError(httpStatus.FORBIDDEN, "User is blocked");
-                }
-                req.user = user;
-                const customToken = jwt.sign({ id: user._id, email: payload.email, role: payload.role }, jwtSecret, { expiresIn: jwtExpiry });
-                req.customToken = customToken;
             }
 
             resolve();
         } catch (err) {
             console.log("FirebaseAuthError:", err);
-            reject(new ApiError(httpStatus.UNAUTHORIZED, "Failed to authenticate"));
+            reject(new ApiError(httpStatus.UNAUTHORIZED, "Failed to authenticate"))
         }
     }).then(() => next()).catch((err) => next(err));
-};
-
-const verifyCustomToken = () => async (req, res, next) => {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return next(new ApiError(httpStatus.UNAUTHORIZED, 'You are unauthorized'));
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    try {
-        const decoded = jwt.verify(token, config.jwtSecret);
-        const user = await authService.getUserByEmail(decoded.email)
-        req.user = user;
-        next();
-    } catch (err) {
-        return next(new ApiError(httpStatus.UNAUTHORIZED, 'Invalid token'));
-    }
-};
+}
 
 const restrictTo = (...roles) => {
     return (req, res, next) => {
@@ -116,9 +54,41 @@ const restrictTo = (...roles) => {
     }
 };
 
+//Only for backend developer to generate token to call APIS
+const generateToken = async (req, res, next) => {
+
+    try {
+        const token = await admin.auth().createCustomToken(req.params.uid);
+        const user = await signInWithCustomToken(getAuth(), token);
+        const idToken = user._tokenResponse.idToken
+        return res.status(200).json({
+            status: true,
+            token: idToken
+        });
+    } catch (err) {
+        return res.status(500).json({
+            status: false,
+            msg: err.message
+        })
+    }
+}
+
+const deleteFirebaseUser = async (uid) => {
+    let duser = await admin.auth().deleteUser(uid).then(function () {
+        console.log('Successfully deleted user');
+        return true
+    })
+        .catch(function (error) {
+            console.log('Error deleting user:', error);
+            return false
+
+        });
+    return duser;
+}
+
 module.exports = {
     firebaseAuth,
-    restrictTo,
-    generateCustomToken,
-    verifyCustomToken
+    generateToken,
+    deleteFirebaseUser,
+    restrictTo
 }

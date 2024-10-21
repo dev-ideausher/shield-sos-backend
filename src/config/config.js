@@ -9,13 +9,11 @@ const envVarsSchema = Joi.object().keys({
     NODE_ENV: Joi.string().valid("test", "development", "production").required(),
     PORT: Joi.number().default(8001),
     MONGODB_URL: Joi.string().required(),
-    JWT_SECRET: Joi.string().required(),
-    JWT_EXPIRY: Joi.string().required(),
-    PASSWORD_SECRET_KEY: Joi.string().required(),
     AWS_REGION: Joi.string().required(),
     AWS_ACCESS_KEY_ID: Joi.string().required(),
     AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-    AWS_S3_BUCKET: Joi.string().required()
+    AWS_S3_BUCKET: Joi.string().required(),
+    FIREBASE_SECRET: Joi.string().required()
 }).unknown();
 
 // validating the process.env object that contains all the env variables
@@ -42,8 +40,5 @@ module.exports = {
             useNewUrlParser: true,
             useUnifiedTopology: true,
         },
-    },
-    jwtSecret: envVars.JWT_SECRET,
-    jwtExpiry: envVars.JWT_EXPIRY,
-    password_secret_key: envVars.PASSWORD_SECRET_KEY,
+    }
 }

@@ -5,24 +5,29 @@ const { userService, permissionService, walletService } = require("../services")
 const { searchQuery } = require('../utils/searchQuery');
 const { encryptText, decryptText } = require('../utils/encrypt');
 const config = require('../config/config');
-const { BankAccount, Document } = require("../models")
 const { fileUploadService } = require("../microservices")
 
 const updateUser = catchAsync(async (req, res) => {
-    const updatedUser = await userService.updateUserById(req.user._id, req.body);
-    res.status(200).send({ data: updatedUser, message: "Your details are updated" });
+    const user = await userService.updateUserById(req.user._id, req.body, req.file);
+    res.json({ status: true, message: "Your details are updated", data: user });
 });
 
-const updateUserPreferences = catchAsync(async (req, res) => {
-    const updatedUser = await userService.updateUserPreferencesById(req.user._id, req.body);
-    res.status(200).send({ data: updatedUser, message: "Your preferences are saved" });
+const updateUserByAdmin = catchAsync(async (req, res) => {
+    const userCheck = await userService.getUserById(req.params.userId);
+    if (!userCheck) {
+        throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    }
+    const user = await userService.updateUserById(req.params.userId, req.body, req.file);
+    res.json({ status: true, message: "Your details are updated", data: user });
 });
+
+
 
 const deleteUser = catchAsync(async (req, res) => {
     if (req.user.role === "user" && req.params.userId !== req.user._id.toString()) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "Sorry, you are not authorized to do this");
     }
-    await userService.deleteUserById(req.params.userId);
+    await userService.deleteUserById(req.params.userId, req.body.reason);
     res.status(201).send({ message: "The user deletion process has been completed successfully." });
 });
 
@@ -84,12 +89,8 @@ const updateUserById = catchAsync(async (req, res) => {
 })
 
 const getUserById = catchAsync(async (req, res) => {
-    const updatedUser = await userService.getUserById(req.params.id);
-    let permissions = await permissionService.getPermissionByUserId(updatedUser._id)
-    let wallet = await walletService.getWalletByUserId(updatedUser._id)
-    let bankAccount = await BankAccount.findOne({ user: updatedUser._id })
-    let document = await Document.findOne({ user: updatedUser._id })
-    res.status(200).send({ status: true, message: "user details", data: { ...updatedUser.toJSON(), permissions, wallet, bankAccount, document }, });
+    const user = await userService.getUserById(req.params.id);
+    res.status(200).send({ status: true, message: "user details", data: user });
 });
 
 const getAllUsersData = catchAsync(async (req, res) => {
@@ -144,83 +145,12 @@ const getAllUsers = catchAsync(async (req, res) => {
     })
 })
 
-const changePassword = catchAsync(async (req, res) => {
-    const user = req.user;
-    const { currentPassword, newPassword } = req.body;
-    if (!newPassword) {
-        return res.status(400).json({
-            status: false,
-            message: "Please pass newPassword"
-        });
-    }
-    if (newPassword.length < 6) {
-        return res.status(400).json({
-            status: false,
-            message: "New password must minimum 6 characters long"
-        });
-    }
-    let checkUser = await userService.getUserById(user._id);
-    let deccryptedPassword = decryptText(checkUser.password, config.password_secret_key);
-    if (deccryptedPassword !== currentPassword) {
-        return res.status(400).json({
-            status: false,
-            message: "Invalid current password"
-        })
-    }
-    let encryptedPassword = encryptText(newPassword, config.password_secret_key)
-    checkUser.password = encryptedPassword;
-    await checkUser.save();
-    return res.status(200).send({
-        status: true,
-        message: "Password changed successfully",
-    });
-});
-
-const resetPassword = catchAsync(async (req, res) => {
-    const user = req.user;
-    const { userId } = req.params;
-    const { newPassword } = req.body;
-    if (!newPassword) {
-        return res.status(400).json({
-            status: false,
-            message: "Please pass newPassword"
-        });
-    }
-    if (newPassword.length < 6) {
-        return res.status(400).json({
-            status: false,
-            message: "New password must minimum 6 characters long"
-        });
-    }
-    let checkUser = await userService.getUserById(userId);
-    if (
-        user.role !== "superadmin"
-        && user._id.toString() !== checkUser._id.toString()
-        && user._id.toString() !== checkUser.admin.toString()
-        && user._id.toString() !== checkUser.superDistributor.toString()
-    ) {
-        return res.status(400).json({
-            status: false,
-            message: "You do not have permissions to reset the password"
-        });
-    }
-    let encryptedPassword = encryptText(newPassword, config.password_secret_key)
-    checkUser.password = encryptedPassword;
-    await checkUser.save();
-    return res.status(200).send({
-        status: true,
-        message: "Password changed successfully",
-    });
-});
-
 module.exports = {
     deleteUser,
     updateUser,
-    updateUserPreferences,
     updateUserById,
     getUserById,
     getAllUsersData,
     getAllUsers,
-    changePassword,
-    resetPassword
+    updateUserByAdmin
 }

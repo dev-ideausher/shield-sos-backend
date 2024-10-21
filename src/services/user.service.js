@@ -2,6 +2,7 @@ const { User } = require("../models");
 const httpStatus = require("http-status");
 const ApiError = require("../utils/ApiError");
 const { getAllData } = require("../utils/getAllData");
+const { fileUploadService } = require("../microservices")
 
 
 const userValidator = (user) => {
@@ -14,15 +15,22 @@ const userValidator = (user) => {
     }
 }
 
-async function updateUserById(id, newDetails) {
-    return await User.findByIdAndUpdate(id, newDetails, { returnDocument: "after" });
+async function updateUserById(id, newDetails, profilePicture = null) {
+    if (profilePicture) {
+        const [profilePic] = await fileUploadService.s3Upload([profilePicture], 'profilePics');
+        newDetails.profilePic = profilePic;
+    }
+    return User.findByIdAndUpdate(id, newDetails, {
+        new: true,
+    });
 }
 
-async function deleteUserById(id) {
+async function deleteUserById(id, reason) {
     try {
         const user = await User.findById(id);
         userValidator(user);
         user.isDeleted = true;
+        user.deleteReason = reason;
         await user.save();
         return true;
     } catch (err) {

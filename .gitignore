@@ -132,3 +132,12 @@ dist
 firebase-service-secret.json
 .DS_Store
 src/.DS_Store
+firebase-web.js
+mqtt.js
+
+aws lambda add-permission \
+  --function-name customAuthLambda \
+  --statement-id iot-invoke-authorizer \
+  --action "lambda:InvokeFunction" \
+  --principal iot.amazonaws.com \
+  --source-arn arn:aws:iot:us-east-1:891377329008:authorizer/test
