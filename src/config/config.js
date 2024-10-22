@@ -35,7 +35,7 @@ module.exports = {
         secretAccessKey: envVars.AWS_SECRET_ACCESS_KEY,
     },
     mongoose: {
-        url: envVars.NODE_ENV === "production" ? envVars.PROD_MONGODB_URL : envVars.MONGODB_URL,
+        url: envVars.NODE_ENV === "production" ? envVars.MONGODB_URL : envVars.MONGODB_URL,
         options: {
             useNewUrlParser: true,
             useUnifiedTopology: true,
