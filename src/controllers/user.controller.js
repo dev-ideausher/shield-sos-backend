@@ -12,6 +12,11 @@ const updateUser = catchAsync(async (req, res) => {
     res.json({ status: true, message: "Your details are updated", data: user });
 });
 
+const getUserDetails = catchAsync(async (req, res) => {
+    const user = await userService.getUserById(req.user._id);
+    res.json({ data: user });
+});
+
 const updateUserByAdmin = catchAsync(async (req, res) => {
     const userCheck = await userService.getUserById(req.params.userId);
     if (!userCheck) {
@@ -152,5 +157,6 @@ module.exports = {
     getUserById,
     getAllUsersData,
     getAllUsers,
-    updateUserByAdmin
+    updateUserByAdmin,
+    getUserDetails
 }

@@ -16,6 +16,12 @@ router.patch("/update-me",
     userController.updateUser
 );
 
+// for updating userDetails
+router.get("/me",
+    firebaseAuth(),
+    userController.getUserDetails
+);
+
 // for deleting a user
 router.delete("/:userId",
     validate(userValidation.deleteUser),
