@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk');
 const config = require("../config/config");
+const crypto = require('crypto');
 
 AWS.config.update({
     accessKeyId: config.aws.accessKeyId,
@@ -39,6 +40,16 @@ async function createIoTDevice(macAddress) {
     } catch (error) {
         console.error('Error creating IoT device:', error);
     }
+}
+
+// Function to generate a 20 character ASCII-printable password
+function generateUniquePassword() {
+    // Generate random bytes
+    const randomBytes = crypto.randomBytes(15); // 15 bytes will become 20 characters in Base64
+    // Encode the random bytes to Base64 and remove any extra padding (= characters)
+    const base64Password = randomBytes.toString('base64').replace(/=/g, '');
+    // Return the first 20 characters of the encoded string
+    return base64Password.substring(0, 20);
 }
 
 async function deleteIoTDevice(macAddress) {
