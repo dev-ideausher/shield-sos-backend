@@ -72,7 +72,7 @@ const updateDevice = catchAsync(async (req, res) => {
         request: { data },
         response: {
             response_code: 0,
-            response_message: "Update successful",
+            response_message: "Success",
             data: {}
         }
     };
