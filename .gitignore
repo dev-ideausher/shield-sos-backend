@@ -141,3 +141,5 @@ aws lambda add-permission \
   --action "lambda:InvokeFunction" \
   --principal iot.amazonaws.com \
   --source-arn arn:aws:iot:us-east-1:891377329008:authorizer/test
+
+mqtt2.js

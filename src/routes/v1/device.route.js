@@ -5,14 +5,14 @@ const { firebaseAuth } = require('../../middlewares/firebaseAuth');
 
 router.post(
     '/',
-    firebaseAuth(),
+    // firebaseAuth(),
     // shield.checkOwnership,
     deviceController.createDevice
 );
 
 router.patch(
     '/:deviceId',
-    firebaseAuth(),
+    // firebaseAuth(),
     // shield.checkOwnership,
     deviceController.updateDevice
 );
