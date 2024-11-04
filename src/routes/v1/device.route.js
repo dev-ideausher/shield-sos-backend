@@ -10,7 +10,7 @@ router.post(
     deviceController.createDevice
 );
 
-router.patch(
+router.post(
     '/:deviceId',
     // firebaseAuth(),
     // shield.checkOwnership,
