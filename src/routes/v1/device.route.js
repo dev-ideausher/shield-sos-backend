@@ -7,14 +7,28 @@ router.post(
     '/',
     // firebaseAuth(),
     // shield.checkOwnership,
+    deviceController.iotDevices
+);
+
+router.post(
+    '/create',
+    firebaseAuth(),
+    // shield.checkOwnership,
     deviceController.createDevice
+);
+
+router.post(
+    '/:deviceId/update',
+    firebaseAuth(),
+    // shield.checkOwnership,
+    deviceController.updateIOTDevice
 );
 
 router.post(
     '/:deviceId',
     // firebaseAuth(),
     // shield.checkOwnership,
-    deviceController.updateDevice
+    deviceController.updateIOTDevice
 );
 
 router.delete(
