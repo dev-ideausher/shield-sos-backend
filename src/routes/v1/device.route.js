@@ -21,7 +21,7 @@ router.post(
     '/:deviceId/update',
     firebaseAuth(),
     // shield.checkOwnership,
-    deviceController.updateIOTDevice
+    deviceController.updateDevice
 );
 
 router.post(
@@ -29,6 +29,11 @@ router.post(
     // firebaseAuth(),
     // shield.checkOwnership,
     deviceController.updateIOTDevice
+);
+
+router.get(
+    '/:filename',
+    deviceController.getAudioFile
 );
 
 router.delete(
