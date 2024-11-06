@@ -144,3 +144,4 @@ aws lambda add-permission \
 
 mqtt2.js
 python
+venv

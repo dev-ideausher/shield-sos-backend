@@ -87,11 +87,11 @@ const deleteDevice = catchAsync(async (req, res) => {
     if (!device) {
         throw new ApiError(httpStatus.NOT_FOUND, 'Device not found');
     }
-    let deleteAwsIot = await deleteIoTDevice(device.macAddress);
-    if (!deleteAwsIot.success) {
-        throw new ApiError(httpStatus.BAD_REQUEST, 'Device deletion failed. Try again later...');
-    }
-    await deviceService.deleteDeviceById(deviceId, device.placeId);
+    // let deleteAwsIot = await deleteIoTDevice(device.macAddress);
+    // if (!deleteAwsIot.success) {
+    //     throw new ApiError(httpStatus.BAD_REQUEST, 'Device deletion failed. Try again later...');
+    // }
+    await deviceService.deleteDeviceById(deviceId, device.place);
     res.status(204).send();
 });
 
