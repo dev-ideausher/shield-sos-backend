@@ -31,10 +31,6 @@ router.post(
     deviceController.updateIOTDevice
 );
 
-router.get(
-    '/:filename',
-    deviceController.getAudioFile
-);
 
 router.delete(
     '/:deviceId',
