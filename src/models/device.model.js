@@ -48,7 +48,6 @@ const deviceSchema = new mongoose.Schema(
     recVolume: {
       type: Number,
       default: 100,
-      default: 100,
       min: 0, // Minimum
       max: 100, // Maximun
     },
