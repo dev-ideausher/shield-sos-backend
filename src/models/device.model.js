@@ -44,6 +44,7 @@ const deviceSchema = new mongoose.Schema(
     },
     recNumber: {
       type: Number,
+      default: 1,
     },
     recVolume: {
       type: Number,
