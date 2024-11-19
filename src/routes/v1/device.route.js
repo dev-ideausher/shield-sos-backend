@@ -12,8 +12,8 @@ router.post(
 
 router.post(
   "/create",
-  // firebaseAuth(),
-  // shield.checkOwnership,
+  firebaseAuth(),
+  shield.checkOwnership,
   deviceController.createDevice
 );
 
