@@ -23,12 +23,13 @@ const createDevice = catchAsync(async (req, res) => {
   const data = await deviceService.createDevice(req.body.placeId, {
     ...req.body,
     place: req.body.placeId,
-    createdBy: req.body._id,
+    createdBy: req.user._id,
     thingId: req.body.macAddress,
     username: req.body.macAddress.replace(/:/g, ""),
     password,
   });
 
+  // Send the response
   res
     .status(200)
     .json({ status: true, message: "Device added successfully", data });
