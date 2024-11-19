@@ -13,7 +13,7 @@ router.post(
 router.post(
   "/create",
   firebaseAuth(),
-  shield.checkOwnership,
+  // shield.checkOwnership,
   deviceController.createDevice
 );
 
