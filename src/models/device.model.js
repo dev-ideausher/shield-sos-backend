@@ -15,6 +15,7 @@ const deviceSchema = new mongoose.Schema(
     deviceId: {
       type: String,
       required: true,
+      unique: true,
     },
     macAddress: {
       type: String,
