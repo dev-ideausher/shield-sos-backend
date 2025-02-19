@@ -19,7 +19,7 @@ const registerUser = catchAsync(async (req, res) => {
             userObj = {
                 name: req.newUser.name,
                 email: req.newUser.email,
-                profilePic: req.newUser.picture,
+                // profilePic: req.newUser.picture,
                 ...req.body
             }
         }
