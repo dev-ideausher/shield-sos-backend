@@ -3,7 +3,7 @@ const httpStatus = require("http-status");
 const ApiError = require("../utils/ApiError");
 const config = require("../config/config");
 const { getAuth, signInWithCustomToken } = require("firebase/auth");
-// require("../../firebase-web");
+require("../../firebase-web");
 
 // const serviceAccount = require("../../firebase-service-secret.json");
 const { userService, authService } = require("../services");
